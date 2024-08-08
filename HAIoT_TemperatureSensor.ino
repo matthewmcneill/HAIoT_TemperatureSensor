@@ -31,6 +31,6 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
   connectToWiFi();    // check we still have the network up - its flakey on the Nano IoT 33
-//  loopTime();         // do ezTime updates
+//  loopTime();         // do ezTime NTP updates
   ha.loop();          // home assistant polling and event updates
 }

@@ -8,6 +8,45 @@
 #include "sys_logStatus.h"
 #include "sys_wifi.h"
 
+
+// ================================[ A cache of persistent strings for UIDs ]==================================
+// this hacky work around is required because the homeassistant library does not make local copies of the strings 
+// being used, but just keeps references to the pointers to the char arrays.  So it works fine with constants, 
+// but if you are using more dynamic values, which we need for uniqueness, then you need fixed char array 
+// memory address pointers.  Otherwise you will get all sorts of random data in your unique ids.
+// don't use <vectors> because the pointers can change, don't use Strings because the pointers can change.
+
+#define RESERVE_UIDS    5   // reserve 5 strings for UIDs
+#define MAX_UID_LENGTH  64  // max UID length is 64 chars
+int NEXT_ID = 0;            // let's count how many we use
+
+const char* uids[RESERVE_UIDS]; // Array to store C-style strings (const char*)
+
+// Save a string in the array and return a pointer to the saved string
+const char* newUid(const String& name, int instance = -1) {
+    // Check for available space
+    if (NEXT_ID >= RESERVE_UIDS) {
+        logSuspend("Not enough UID space reserved");
+        return nullptr; // Indicate an error
+    }
+
+    String s_uid = getUniqueChipID();  
+    if (instance >= 0) {
+        s_uid = s_uid + "_" + String(instance);
+    }
+    s_uid = s_uid + "_" + name;  // put the name last in case its very long
+
+    // Convert the Arduino String to a C-style string
+    char c_uid[MAX_UID_LENGTH]; 
+    s_uid.toCharArray(c_uid, MAX_UID_LENGTH); // Copy String to char array
+
+    // Allocate memory and copy the string
+    uids[NEXT_ID] = strdup(c_uid); 
+    NEXT_ID++;
+
+    return uids[NEXT_ID - 1];
+}
+
 // ====================================[ HA device + entity definition ]=======================================
 
 // Turns on debug information of the ArduinoHA core (from <ArduinoHADefines.h>)
@@ -45,10 +84,11 @@ public:
         HASensorNumber temperature;
         // Set up all the entities (note that event handlers are added later)
         HAEntitiesType() : 
-
-            temperature("cbTemperature02", HASensorNumber::PrecisionP1) 
+            temperature(newUid("temperature"), HASensorNumber::PrecisionP1) 
+//            temperature("Temperature07", HASensorNumber::PrecisionP1) 
             {
               // Temperature sensor
+              // temperature.setObjectId("temperature");
               temperature.setName("Temperature °C");
               temperature.setUnitOfMeasurement("°C");
               temperature.setIcon("mdi:thermometer-water");
@@ -91,7 +131,6 @@ HADataType ha(networkClient);
 // ====================================[ HA setup and connection ]=======================================
  
 void setupHA() {
-
   // [1] -- set up the HA device --
 
   logStatus("Configuring the HA Device.");

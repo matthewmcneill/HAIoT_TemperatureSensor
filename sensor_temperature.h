@@ -20,8 +20,7 @@ DallasTemperature tempSensors(&oneWire);
 void onTemperatureUpdateEvent() {
     // Update Temperature
     tempSensors.requestTemperatures();
-//    Serial.print("Celsius temperature: ");
-//    Serial.println(tempSensors.getTempCByIndex(0)); 
+    logStatus("Sending temperature (C): "+ String(tempSensors.getTempCByIndex(0))); 
     float tempValue = tempSensors.getTempCByIndex(0); // Get temperature reading from sensor
     ha.entities.temperature.setValue(tempValue); // Send to Home Assistant 
 }
