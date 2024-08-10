@@ -85,7 +85,7 @@ public:
         // Set up all the entities (note that event handlers are added later)
         HAEntitiesType() : 
             temperature(newUid("temperature"), HASensorNumber::PrecisionP1) 
-//            temperature("Temperature07", HASensorNumber::PrecisionP1) 
+//            temperature(String(getUniqueChipID() + "_temperature"_" + String(clientID)").c_str(), HASensorNumber::PrecisionP1) 
             {
               // Temperature sensor
               // temperature.setObjectId("temperature");
